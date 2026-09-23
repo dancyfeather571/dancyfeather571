@@ -5,7 +5,7 @@ import java.util.List;
 import org.jspecify.annotations.Nullable;
 
 import com.znistudios.modstudio.client.ui.render.ZniDraw;
-import com.znistudios.modstudio.client.ui.render.ZniFace;
+import com.znistudios.modstudio.client.ui.render.ZniBranding;
 import com.znistudios.modstudio.client.ui.theme.ZniTheme;
 import com.znistudios.modstudio.client.ui.widget.ZniButton;
 
@@ -18,7 +18,7 @@ import net.minecraft.util.FormattedCharSequence;
 /**
  * The Zni's Mod Studio home screen.
  *
- * <p>Layout, top to bottom: branding header (face, title, subtitle), gold divider, intro
+ * <p>Layout, top to bottom: branding header (character or face, title, subtitle), gold divider, intro
  * panel, "Installed Mods" section (fills the remaining height), Done button. Every position
  * is derived from the current GUI-scaled width and height in {@link #init()}, which vanilla
  * calls again on every resize or GUI-scale change.
@@ -37,9 +37,12 @@ public class ModStudioScreen extends Screen {
 	// Layout, recomputed in init()
 	private int contentX;
 	private int contentWidth;
-	private int faceX;
-	private int faceY;
-	private int faceSize;
+	private int portraitX;
+	private int portraitY;
+	private int portraitWidth;
+	private int portraitHeight;
+	/** Full character at 2x on tall screens, otherwise the face only. */
+	private boolean showCharacter;
 	private int titleX;
 	private int titleY;
 	private int titleScale;
@@ -58,7 +61,7 @@ public class ModStudioScreen extends Screen {
 
 	@Override
 	protected void init() {
-		ZniFace.refresh();
+		ZniBranding.refresh();
 
 		int sideMargin = Math.max(ZniTheme.PADDING, this.width / 20);
 		this.contentWidth = Math.min(this.width - 2 * sideMargin, MAX_CONTENT_WIDTH);
@@ -67,20 +70,28 @@ public class ModStudioScreen extends Screen {
 		int top = clamp(this.height / 14, 6, 24);
 		int bottomMargin = clamp(this.height / 20, 6, 20);
 
-		// Header: [face] [title / subtitle], centered as a group.
+		// Header: [portrait] [title / subtitle], centered as a group.
+		// Tall screens get the full character, medium the 32px face, small the 16px face.
 		boolean roomy = this.height >= 240;
-		this.faceSize = roomy ? 32 : 16;
-		int textStart = this.faceSize + ZniTheme.GAP + 2;
+		this.showCharacter = this.height >= 320;
+		if (this.showCharacter) {
+			this.portraitWidth = ZniBranding.CHARACTER_WIDTH * 2;
+			this.portraitHeight = ZniBranding.CHARACTER_HEIGHT * 2;
+		} else {
+			this.portraitWidth = roomy ? 32 : 16;
+			this.portraitHeight = this.portraitWidth;
+		}
+		int textStart = this.portraitWidth + ZniTheme.GAP + 2;
 		int titleWidth = this.font.width(TITLE);
 		this.titleScale = roomy && textStart + titleWidth * 2 <= this.contentWidth ? 2 : 1;
 		int textBlockWidth = Math.max(titleWidth * this.titleScale, this.font.width(SUBTITLE));
 		int textBlockHeight = this.font.lineHeight * this.titleScale + LINE_GAP + this.font.lineHeight;
-		int headerHeight = Math.max(this.faceSize, textBlockHeight);
+		int headerHeight = Math.max(this.portraitHeight, textBlockHeight);
 		int groupWidth = Math.min(this.contentWidth, textStart + textBlockWidth);
 		int groupX = this.contentX + (this.contentWidth - groupWidth) / 2;
 
-		this.faceX = groupX;
-		this.faceY = top + (headerHeight - this.faceSize) / 2;
+		this.portraitX = groupX;
+		this.portraitY = top + (headerHeight - this.portraitHeight) / 2;
 		this.titleX = groupX + textStart;
 		this.titleY = top + (headerHeight - textBlockHeight) / 2;
 		this.subtitleY = this.titleY + this.font.lineHeight * this.titleScale + LINE_GAP;
@@ -140,7 +151,11 @@ public class ModStudioScreen extends Screen {
 	}
 
 	private void extractHeader(GuiGraphicsExtractor graphics) {
-		ZniFace.draw(graphics, this.faceX, this.faceY, this.faceSize);
+		if (this.showCharacter) {
+			ZniBranding.drawCharacter(graphics, this.portraitX, this.portraitY, 2);
+		} else {
+			ZniBranding.drawFace(graphics, this.portraitX, this.portraitY, this.portraitWidth);
+		}
 
 		int textWidth = this.contentX + this.contentWidth - this.titleX;
 		FormattedCharSequence title = ZniDraw.singleLine(this.font, TITLE, textWidth / this.titleScale);

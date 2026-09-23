@@ -6,7 +6,7 @@ import org.jspecify.annotations.Nullable;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.znistudios.modstudio.client.screen.ModStudioScreen;
-import com.znistudios.modstudio.client.ui.render.ZniFace;
+import com.znistudios.modstudio.client.ui.render.ZniBranding;
 import com.znistudios.modstudio.client.ui.theme.ZniTheme;
 import com.znistudios.modstudio.client.ui.widget.ZniIconButton;
 
@@ -67,8 +67,8 @@ public final class ZnisModStudioClient implements ClientModInitializer {
 
 	/** The pause-menu entry: a 20x20 ZniStudios icon button showing the face. */
 	public static ZniIconButton createPauseMenuButton(Screen pauseScreen) {
-		ZniFace.refresh();
-		return ZniIconButton.create(OPEN_LABEL, ZniFace::draw, button -> openModStudio(pauseScreen));
+		ZniBranding.refresh();
+		return ZniIconButton.create(OPEN_LABEL, ZniBranding::drawFace, button -> openModStudio(pauseScreen));
 	}
 
 	private static void addPauseButtonFallback(Screen screen) {

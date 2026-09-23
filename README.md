@@ -19,18 +19,29 @@ settings button) and give all ZniStudios mods the same dark-and-gold components.
 
 ## Branding assets
 
-| File | Purpose |
-|---|---|
-| `src/main/resources/assets/znis_mod_studio/textures/gui/zni_face.png` | A pre-cropped face/head icon (any size, drawn whole, aspect ratio kept). |
-| `src/main/resources/assets/znis_mod_studio/textures/gui/zni_skin.png` | *Or* a full 64x64 / 64x32 skin: only the head front + hat layer are cropped out. Used when `zni_face.png` is absent. |
-| `src/main/resources/assets/znis_mod_studio/icon.png` | Mod list icon (currently a placeholder "Z" monogram). Replace with your own art. |
+The source skin is kept at `art/zni_skin_source.png` (not shipped in the jar). Every branding
+texture is derived from it by `art/BakeBranding.java`, so nothing is cropped or stretched at
+runtime. Re-run the tool after replacing the skin:
 
-If neither face file exists, a gold "Z" monogram is drawn instead. Pixel art is always drawn
-with nearest-neighbour sampling at whole-number scales, so it stays crisp.
+```
+java art/BakeBranding.java
+```
+
+| Derived file (`assets/znis_mod_studio/...`) | Size | Used for |
+|---|---|---|
+| `textures/gui/zni_face_8.png` / `_16` / `_32` | 8, 16, 32 px | Head (face + hair layer): pause-menu button (16), Mod Studio header (32 or 16) |
+| `textures/gui/zni_character.png` / `_2x` | 16x32, 32x64 | Full front-view character: Mod Studio header on tall screens |
+| `icon.png` | 128x128 | Mod list icon (face) |
+
+The bake step composites the overlay layers onto their base layers and only uses whole-number
+nearest-neighbour enlargement, so transparency and pixel edges are kept exactly. In game the
+textures are drawn 1:1 (or at whole-number multiples). Minecraft's default GUI texture sampling
+is nearest-neighbour and GUI scales are always whole numbers, so the art stays sharp at every scale.
 
 ## Project structure
 
 ```
+art/                                source skin + BakeBranding.java (asset derivation tool)
 src/main/java/com/znistudios/modstudio/
   ZnisModStudio.java                  common entrypoint, MOD_ID, id() helper
 src/client/java/com/znistudios/modstudio/client/
@@ -40,7 +51,7 @@ src/client/java/com/znistudios/modstudio/client/
   screen/InstalledModsSection.java    Installed Mods area (empty state for now)
   ui/theme/ZniTheme.java              ALL ZniStudios colors and spacing
   ui/render/ZniDraw.java              panels, outlines, gold divider, text wrapping
-  ui/render/ZniFace.java              face/skin drawing with crisp pixels + fallback
+  ui/render/ZniBranding.java          face/character drawing (baked textures, monogram fallback)
   ui/widget/ZniButton.java            standard gold-hover/focus button
   ui/widget/ZniIconButton.java        square icon variant
 ```
