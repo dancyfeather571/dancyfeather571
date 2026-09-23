@@ -5,6 +5,8 @@
 	"znis_mod_studio.installed_mods": "Installed Mods",
 	"znis_mod_studio.installed_mods.empty": "No ZniStudios mods have registered yet.",
 	"znis_mod_studio.installed_mods.empty_hint": "Supported mods will appear here automatically.",
+	"znis_mod_studio.installed_mods.by": "by %s",
+	"znis_mod_studio.installed_mods.settings": "Settings",
 	"znis_mod_studio.button.open": "Zni's Mod Studio",
 	"key.znis_mod_studio.open": "Open Zni's Mod Studio"
 }

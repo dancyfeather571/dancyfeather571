@@ -6,12 +6,14 @@ Zni's Mod Studio is the home and shared UI library for ZniStudios Minecraft mods
 eventually list every installed ZniStudios mod (icon, name, version, description, status,
 settings button) and give all ZniStudios mods the same dark-and-gold components.
 
-## Step 1: what it does now
+## What it does now
 
 - **Mod Studio home screen**: branding header (face + title), intro panel, and an
-  *Installed Mods* section that shows an honest empty state (no mods are faked).
-- **Opening it**: a small face icon button in the pause menu's icon row. You can also bind
-  a key under *Options > Controls > Miscellaneous > Open Zni's Mod Studio* (unbound by default).
+  *Installed Mods* list of every registered ZniStudios mod (or an honest empty state).
+- **Opening it**: the Zni face button in the pause menu's icon row **and** on the title
+  screen's icon row. You can also bind a key under
+  *Options > Controls > Miscellaneous > Open Zni's Mod Studio* (unbound by default).
+- **Automatic mod registration** through `fabric.mod.json` (see below).
 - **Design system**: centralized theme colors plus reusable `ZniButton` / `ZniIconButton`
   with a gold accent on mouse hover **and** keyboard/controller focus.
 - **Responsive layout**: everything is computed from the scaled window size, so it adapts to
@@ -44,11 +46,16 @@ is nearest-neighbour and GUI scales are always whole numbers, so the art stays s
 art/                                source skin + BakeBranding.java (asset derivation tool)
 src/main/java/com/znistudios/modstudio/
   ZnisModStudio.java                  common entrypoint, MOD_ID, id() helper
+  api/ZniModRegistry.java             discovers registered mods from fabric.mod.json
+  api/ZniRegisteredMod.java           one registered mod's metadata
 src/client/java/com/znistudios/modstudio/client/
-  ZnisModStudioClient.java            client entrypoint: key mapping, pause-menu entry, openModStudio()
+  ZnisModStudioClient.java            client entrypoint: key mapping
+  api/ZniSettingsScreens.java         optional per-mod settings screen hook
+  entry/StudioEntryPoints.java        shared face button for pause menu + title screen
   mixin/PauseScreenMixin.java         adds the icon button to the pause menu icon row
   screen/ModStudioScreen.java         the home screen
-  screen/InstalledModsSection.java    Installed Mods area (empty state for now)
+  screen/InstalledModsSection.java    scrollable Installed Mods list / empty state
+  screen/ModCard.java                 one registered mod (icon, name, version, authors, description)
   ui/theme/ZniTheme.java              ALL ZniStudios colors and spacing
   ui/render/ZniDraw.java              panels, outlines, gold divider, text wrapping
   ui/render/ZniBranding.java          face/character drawing (baked textures, monogram fallback)
@@ -56,10 +63,39 @@ src/client/java/com/znistudios/modstudio/client/
   ui/widget/ZniIconButton.java        square icon variant
 ```
 
-## Planned (not built yet)
+## Registering a ZniStudios mod
 
-- **Registration API (Step 2)**: ZniStudios mods register a mod ID, display name, version,
-  icon, description and a settings-screen callback; the Installed Mods section lists them.
+A mod appears in Zni's Mod Studio by adding this to its own `fabric.mod.json`. Nothing else is
+needed:
+
+```json
+"custom": {
+  "zni_mod_studio": {
+    "registered": true
+  }
+}
+```
+
+The Studio discovers it through `FabricLoader.getInstance().getAllMods()` and shows the mod's
+existing **name, version, description, authors and icon**. Mods without the block, or with a
+malformed one, are ignored (a warning is logged) and never crash the game. Icons following the
+usual `assets/<modid>/icon.png` convention are shown; otherwise a lettered tile is used.
+
+Other code can read the same list with `ZniModRegistry.getMods()`.
+
+### Settings pages (extension point)
+
+A registered mod can optionally give the Studio its own settings screen from its client entrypoint:
+
+```java
+ZniSettingsScreens.register("my_mod", parent -> new MySettingsScreen(parent));
+```
+
+Its card then shows a gold *Settings* tag and opens that screen when pressed. There is no config
+framework here on purpose: each mod builds its own screen.
+
+## Planned
+
 - **Shared library**: other ZniStudios mods depend on this mod and reuse `ZniTheme`,
   `ZniButton`, panels and headings, so every mod shares one look.
 

@@ -3,7 +3,7 @@ package com.znistudios.modstudio.client.mixin;
 import com.llamalad7.mixinextras.expression.Definition;
 import com.llamalad7.mixinextras.expression.Expression;
 import com.llamalad7.mixinextras.sugar.Local;
-import com.znistudios.modstudio.client.ZnisModStudioClient;
+import com.znistudios.modstudio.client.entry.StudioEntryPoints;
 
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -22,7 +22,7 @@ import net.minecraft.network.chat.Component;
  * before vanilla arranges it, so spacing and centering stay vanilla's.
  *
  * <p>{@code require = 0}: if a future Minecraft update moves this code, the game still
- * loads and {@code ZnisModStudioClient} places the button beside "Back to Game" instead.
+ * loads and {@code StudioEntryPoints} places the button beside "Back to Game" instead.
  */
 @Mixin(PauseScreen.class)
 public abstract class PauseScreenMixin extends Screen {
@@ -34,6 +34,6 @@ public abstract class PauseScreenMixin extends Screen {
 	@Expression("integratedServer = ?")
 	@Inject(method = "createPauseMenu", at = @At("MIXINEXTRAS:EXPRESSION"), require = 0)
 	private void znis_mod_studio$addIconButton(CallbackInfo ci, @Local(name = "iconButtonRow") LinearLayout iconButtonRow) {
-		iconButtonRow.addChild(ZnisModStudioClient.createPauseMenuButton(this));
+		iconButtonRow.addChild(StudioEntryPoints.createButton(this));
 	}
 }

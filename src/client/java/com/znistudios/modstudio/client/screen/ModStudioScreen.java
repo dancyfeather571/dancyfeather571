@@ -4,8 +4,10 @@ import java.util.List;
 
 import org.jspecify.annotations.Nullable;
 
-import com.znistudios.modstudio.client.ui.render.ZniDraw;
+import com.znistudios.modstudio.api.ZniModRegistry;
+import com.znistudios.modstudio.api.ZniRegisteredMod;
 import com.znistudios.modstudio.client.ui.render.ZniBranding;
+import com.znistudios.modstudio.client.ui.render.ZniDraw;
 import com.znistudios.modstudio.client.ui.theme.ZniTheme;
 import com.znistudios.modstudio.client.ui.widget.ZniButton;
 
@@ -19,7 +21,7 @@ import net.minecraft.util.FormattedCharSequence;
  * The Zni's Mod Studio home screen.
  *
  * <p>Layout, top to bottom: branding header (character or face, title, subtitle), gold divider, intro
- * panel, "Installed Mods" section (fills the remaining height), Done button. Every position
+ * panel, "Installed Mods" section (fills the remaining height, lists registered mods), Done button. Every position
  * is derived from the current GUI-scaled width and height in {@link #init()}, which vanilla
  * calls again on every resize or GUI-scale change.
  */
@@ -51,8 +53,7 @@ public class ModStudioScreen extends Screen {
 	private int introY;
 	private int introHeight;
 	private List<FormattedCharSequence> introLines = List.of();
-	private int modsY;
-	private int modsHeight;
+	private InstalledModsSection modsSection;
 
 	public ModStudioScreen(@Nullable Screen parent) {
 		super(TITLE);
@@ -100,16 +101,14 @@ public class ModStudioScreen extends Screen {
 		// Footer
 		int buttonWidth = Math.min(MAX_BUTTON_WIDTH, this.contentWidth);
 		int buttonY = this.height - bottomMargin - ZniTheme.BUTTON_HEIGHT;
-		ZniButton done = new ZniButton((this.width - buttonWidth) / 2, buttonY, buttonWidth, ZniTheme.BUTTON_HEIGHT,
-				CommonComponents.GUI_DONE, button -> this.onClose());
-		this.addRenderableWidget(done);
 
 		// Body: intro gets what it needs, as long as the mods section keeps its minimum height.
 		int bodyTop = this.dividerY + 2 + ZniTheme.GAP + 2;
 		int bodyBottom = buttonY - ZniTheme.GAP - 2;
 		int bodyHeight = Math.max(0, bodyBottom - bodyTop);
 		int lineStep = this.font.lineHeight + LINE_GAP;
-		int modsMin = InstalledModsSection.minHeight(this.font);
+		List<ZniRegisteredMod> mods = ZniModRegistry.getMods();
+		int modsMin = InstalledModsSection.preferredMinHeight(this.font, !mods.isEmpty());
 
 		int introSpace = bodyHeight - modsMin - ZniTheme.GAP - 2 * ZniTheme.PADDING;
 		int maxIntroLines = Math.max(0, (introSpace + LINE_GAP) / lineStep);
@@ -117,8 +116,16 @@ public class ModStudioScreen extends Screen {
 		this.introY = bodyTop;
 		this.introHeight = this.introLines.isEmpty() ? 0 : this.introLines.size() * lineStep - LINE_GAP + 2 * ZniTheme.PADDING;
 
-		this.modsY = this.introHeight > 0 ? this.introY + this.introHeight + ZniTheme.GAP : bodyTop;
-		this.modsHeight = bodyBottom - this.modsY;
+		int modsY = this.introHeight > 0 ? this.introY + this.introHeight + ZniTheme.GAP : bodyTop;
+		int modsHeight = bodyBottom - modsY;
+
+		// Mod cards are added before Done so Tab/controller focus runs top to bottom.
+		this.modsSection = new InstalledModsSection(mods, this);
+		this.modsSection.init(this.font, this.contentX, modsY, this.contentWidth, modsHeight, this::addWidget);
+
+		ZniButton done = new ZniButton((this.width - buttonWidth) / 2, buttonY, buttonWidth, ZniTheme.BUTTON_HEIGHT,
+				CommonComponents.GUI_DONE, button -> this.onClose());
+		this.addRenderableWidget(done);
 	}
 
 	@Override
@@ -142,9 +149,7 @@ public class ModStudioScreen extends Screen {
 			}
 		}
 
-		if (this.modsHeight >= InstalledModsSection.minHeight(this.font)) {
-			InstalledModsSection.extract(graphics, this.font, this.contentX, this.modsY, this.contentWidth, this.modsHeight);
-		}
+		this.modsSection.extract(graphics, this.font, mouseX, mouseY, delta);
 
 		// Widgets (the Done button) are drawn last so they sit above the panels.
 		super.extractRenderState(graphics, mouseX, mouseY, delta);
@@ -172,6 +177,11 @@ public class ModStudioScreen extends Screen {
 
 		FormattedCharSequence subtitle = ZniDraw.singleLine(this.font, SUBTITLE, textWidth);
 		graphics.text(this.font, subtitle, this.titleX, this.subtitleY, ZniTheme.TEXT_SECONDARY, false);
+	}
+
+	@Override
+	public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+		return this.modsSection.mouseScrolled(mouseX, mouseY, scrollY) || super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
 	}
 
 	@Override
