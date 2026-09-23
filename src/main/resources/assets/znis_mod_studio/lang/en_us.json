@@ -1,0 +1,10 @@
+{
+	"znis_mod_studio.title": "Zni's Mod Studio",
+	"znis_mod_studio.subtitle": "by ZniStudios",
+	"znis_mod_studio.intro": "Welcome to the home of ZniStudios mods. Every ZniStudios mod you have installed will be collected here, with its version, description and settings in one place.",
+	"znis_mod_studio.installed_mods": "Installed Mods",
+	"znis_mod_studio.installed_mods.empty": "No ZniStudios mods have registered yet.",
+	"znis_mod_studio.installed_mods.empty_hint": "Supported mods will appear here automatically.",
+	"znis_mod_studio.button.open": "Zni's Mod Studio",
+	"key.znis_mod_studio.open": "Open Zni's Mod Studio"
+}
